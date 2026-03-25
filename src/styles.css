@@ -43,6 +43,7 @@ body {
   margin: 0;
   min-width: 320px;
   font-family: "Outfit", sans-serif;
+  font-size: 16px;
   color: var(--ink);
   background:
     radial-gradient(circle at top left, rgba(77, 182, 255, 0.4), transparent 28%),
@@ -112,6 +113,7 @@ button:hover {
     linear-gradient(135deg, rgba(8, 29, 59, 0.94), rgba(13, 94, 166, 0.82)),
     radial-gradient(circle at top, rgba(255, 255, 255, 0.16), transparent 35%);
   z-index: 10;
+  overflow: hidden;
 }
 
 .intro-card,
@@ -132,6 +134,7 @@ button:hover {
   box-shadow: var(--shadow-strong);
   position: relative;
   overflow: hidden;
+  animation: introFloat 5s ease-in-out infinite;
 }
 
 .intro-card::after,
@@ -158,6 +161,32 @@ button:hover {
   pointer-events: none;
 }
 
+.intro-screen::before,
+.intro-screen::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.intro-screen::before {
+  top: -80px;
+  right: -60px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+  animation: introPulse 6s ease-in-out infinite;
+}
+
+.intro-screen::after {
+  left: -60px;
+  bottom: -30px;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(77, 182, 255, 0.2), rgba(77, 182, 255, 0));
+  animation: introPulse 7s ease-in-out infinite reverse;
+}
+
 .intro-card h1,
 .hero-panel h2,
 .panel-head h3 {
@@ -167,11 +196,12 @@ button:hover {
 .intro-card h1 {
   margin: 14px 0 10px;
   font-size: clamp(2rem, 4vw, 3.3rem);
+  line-height: 1.08;
 }
 
 .intro-card p {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.86);
 }
@@ -569,6 +599,12 @@ textarea {
   color: var(--muted);
 }
 
+.summary-list strong,
+.history-card strong,
+.catalog-item span {
+  font-size: 1rem;
+}
+
 .theme-section {
   margin-top: 24px;
 }
@@ -829,6 +865,19 @@ tbody tr {
     border-radius: 22px;
   }
 
+  .intro-card {
+    width: 100%;
+    padding: 24px 20px;
+  }
+
+  .intro-card h1 {
+    font-size: clamp(2rem, 10vw, 2.5rem);
+  }
+
+  .intro-card p {
+    font-size: 1rem;
+  }
+
   .hero-panel {
     gap: 16px;
   }
@@ -880,6 +929,115 @@ tbody tr {
     font-size: 1rem;
   }
 
+  input,
+  textarea,
+  select,
+  .primary-button,
+  .secondary-button,
+  .ghost-button {
+    min-height: 54px;
+  }
+
+  .panel-head h3 {
+    font-size: 1.22rem;
+  }
+
+  .summary-list div,
+  .catalog-item,
+  .history-card,
+  .kpi-card {
+    border-radius: 18px;
+  }
+
+  .table-wrap {
+    overflow: visible;
+  }
+
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  table {
+    min-width: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: 14px;
+  }
+
+  tbody tr {
+    padding: 14px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow:
+      var(--shadow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  }
+
+  tbody td {
+    display: grid;
+    grid-template-columns: minmax(110px, 42%) 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(17, 35, 58, 0.07);
+    text-align: left;
+    font-size: 1rem;
+  }
+
+  tbody td:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  tbody td::before {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  tbody td:nth-child(1)::before {
+    content: "Designation";
+  }
+
+  tbody td:nth-child(2)::before {
+    content: "Categorie";
+  }
+
+  tbody td:nth-child(3)::before {
+    content: "Quantite";
+  }
+
+  tbody td:nth-child(4)::before {
+    content: "Prix unitaire";
+  }
+
+  tbody td:nth-child(5)::before {
+    content: "Montant";
+  }
+
+  tbody td:nth-child(6)::before {
+    content: "Action";
+  }
+
+  .qty-chip {
+    justify-content: flex-end;
+  }
+
   .tab-button {
     width: 100%;
     min-height: 52px;
@@ -913,6 +1071,22 @@ tbody tr {
     border-radius: 20px;
   }
 
+  .intro-screen {
+    padding: 14px;
+  }
+
+  .intro-card h1 {
+    font-size: clamp(1.85rem, 10vw, 2.2rem);
+  }
+
+  .intro-card p,
+  .hero-copy,
+  .kpi-card span,
+  .summary-list span,
+  .history-card p {
+    font-size: 0.98rem;
+  }
+
   .section-tabs,
   .kpi-grid {
     grid-template-columns: 1fr;
@@ -942,6 +1116,20 @@ tbody tr {
   .history-card {
     padding: 12px 14px;
   }
+
+  tbody tr {
+    padding: 12px;
+  }
+
+  tbody td {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 9px 0;
+  }
+
+  tbody td::before {
+    font-size: 0.84rem;
+  }
 }
 
 @keyframes spin {
@@ -951,5 +1139,29 @@ tbody tr {
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes introFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes introPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
   }
 }
