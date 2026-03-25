@@ -1,8 +1,12 @@
 {
-  "name": "Grimoire Stock",
-  "short_name": "Grimoire",
+  "name": "G-Stock Labo",
+  "short_name": "G-Stock",
+  "description": "Application de gestion des stocks et commandes du laboratoire.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
   "background_color": "#eef5ff",
   "theme_color": "#0d5ea6",
   "lang": "fr",
@@ -12,6 +16,12 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
