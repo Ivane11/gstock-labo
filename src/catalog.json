@@ -1,62 +1,23 @@
 [
   {
-    "category": "Consommables",
+    "category": "TUBES",
     "items": [
-      "Tubes geles",
-      "Aiguilles GPV10",
-      "Aiguilles GPV21",
-      "Corps de pompe",
-      "Adaptateur",
-      "Lames",
-      "Cotons",
-      "Pipettes",
-      "Gants taille S",
-      "Gants taille M",
-      "Gants taille L",
-      "Cuvettes",
-      "Divans / Supports",
-      "Flacons",
-      "Becher",
-      "Embouts de pipette",
-      "Paquet de rames A4",
-      "Stylos",
-      "Carnet de recus de caisse",
-      "Alcool 1L",
-      "Eau distillee",
-      "Javel",
-      "Savon liquide",
-      "Essuie-tout"
+      "Tube Violet",
+      "Tube Gris",
+      "Tube Vert",
+      "Tube Rouge",
+      "Tube Jaune",
+      "Tube Bleu"
     ]
   },
   {
-    "category": "Reactifs Biologie",
-    "items": [
-      "NFS Diluant BC30s",
-      "Lyse BC30s",
-      "Glycemie",
-      "Fievre typhoide",
-      "CRP",
-      "Toxoplasmose",
-      "Rubeole",
-      "Hepatite B",
-      "HIV",
-      "Serologie SWF",
-      "Myoglobine",
-      "PCR"
-    ]
+    "category": "GANTS",
+    "items": ["Gants (Boite)"]
   },
   {
-    "category": "Analyses Urinaires",
+    "category": "KITS",
     "items": [
-      "Bandelettes Glucose",
-      "Bandelettes Proteine",
-      "Bandelettes Sang",
-      "Sediment urinaire"
-    ]
-  },
-  {
-    "category": "Kits Specifiques",
-    "items": [
+      "KIT BW Syphilis",
       "Kit Serologie SWF",
       "Kit CRP",
       "Kit ELISA",
@@ -67,7 +28,21 @@
     ]
   },
   {
-    "category": "Autres",
-    "items": ["Produit personnalise"]
+    "category": "REACTIFS",
+    "items": [
+      "NFS Diluant BC30s",
+      "Lyse BC30s",
+      "Glycemie",
+      "Fievre Typhoide",
+      "Toxo",
+      "Rubeole",
+      "Hepatite B",
+      "HIV",
+      "Myoglobine"
+    ]
+  },
+  {
+    "category": "AUTRES",
+    "items": ["Lames", "Cotons", "Alcool 1L", "Bureautique", "Champ Libre..."]
   }
 ]

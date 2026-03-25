@@ -10,10 +10,10 @@ const storageKeys = {
 };
 
 const pages = [
-  { id: "home", label: "Accueil" },
-  { id: "order", label: "Nouvelle Commande" },
-  { id: "history", label: "Historique" },
-  { id: "settings", label: "Parametres" },
+  { id: "home", label: "Accueil", icon: "home" },
+  { id: "order", label: "Commande", icon: "order" },
+  { id: "history", label: "Historique", icon: "history" },
+  { id: "settings", label: "Parametres", icon: "settings" },
 ];
 
 const defaultLabInfo = {
@@ -24,6 +24,74 @@ const defaultLabInfo = {
   shippingPlace: "",
   shippingCity: "",
 };
+
+function AnimatedButton({ className = "", children, ...props }) {
+  return (
+    <motion.button
+      whileHover={{ y: -2, scale: 1.01 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 420, damping: 24 }}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+function NavIcon({ icon }) {
+  const commonProps = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    viewBox: "0 0 24 24",
+    className: "nav-icon",
+    "aria-hidden": "true",
+  };
+
+  if (icon === "order") {
+    return (
+      <svg {...commonProps}>
+        <path d="M9 6h11" />
+        <path d="M9 12h11" />
+        <path d="M9 18h11" />
+        <path d="M4 6h.01" />
+        <path d="M4 12h.01" />
+        <path d="M4 18h.01" />
+      </svg>
+    );
+  }
+
+  if (icon === "history") {
+    return (
+      <svg {...commonProps}>
+        <path d="M3 12a9 9 0 1 0 3-6.708" />
+        <path d="M3 3v4h4" />
+        <path d="M12 7v5l3 3" />
+      </svg>
+    );
+  }
+
+  if (icon === "settings") {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 3l1.2 2.52L16 6l-1.8 2.1.3 2.76L12 9.9l-2.5.96.3-2.76L8 6l2.8-.48z" />
+        <circle cx="12" cy="12" r="3.2" />
+        <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.1a1 1 0 0 0-.7-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.1a1 1 0 0 0 .9-.7 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.1a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.1a1 1 0 0 0-.9.6z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...commonProps}>
+      <path d="M3 10.5L12 3l9 7.5" />
+      <path d="M5 9.5V21h14V9.5" />
+      <path d="M9 21v-6h6v6" />
+    </svg>
+  );
+}
 
 function createOrderItem(name, category) {
   return {
@@ -36,36 +104,20 @@ function createOrderItem(name, category) {
   };
 }
 
-function OrderPageHeader({
-  onClear,
-  onSave,
-  onExport,
-  isExportingPdf,
-  lineCount,
-  quantityTotal,
-  total,
-}) {
+function OrderPageHeader({ onClear, lineCount, quantityTotal, total }) {
   return (
-    <section className="section-card order-page-header">
-      <div className="section-heading">
+    <div className="order-page-header">
+      <div className="order-page-header__top">
         <div>
-          <p className="section-kicker">Nouvelle commande</p>
           <h2>Preparez une commande</h2>
           <p className="section-description">
-            Selection par categories, panier tactile sur mobile et tableau lisible
-            sur desktop.
+            Panier tactile, prix modifiable et total calcule en temps reel.
           </p>
         </div>
         <div className="order-actions">
-          <button type="button" className="secondary-button" onClick={onClear}>
+          <AnimatedButton type="button" className="ghost-button" onClick={onClear}>
             Vider la commande
-          </button>
-          <button type="button" className="secondary-button" onClick={onSave}>
-            Sauvegarder
-          </button>
-          <button type="button" className="primary-button" onClick={onExport} disabled={isExportingPdf}>
-            {isExportingPdf ? "Generation..." : "Generer PDF"}
-          </button>
+          </AnimatedButton>
         </div>
       </div>
 
@@ -83,7 +135,7 @@ function OrderPageHeader({
           <strong>{formatCurrency(total)}</strong>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -94,7 +146,7 @@ function CategoryAccordionList({ catalogData, openCategory, setOpenCategory, onA
         const isOpen = openCategory === group.category;
         return (
           <article key={group.category} className={isOpen ? "category-card open" : "category-card"}>
-            <button
+            <AnimatedButton
               type="button"
               className="category-card__header"
               onClick={() => setOpenCategory(isOpen ? "" : group.category)}
@@ -105,19 +157,19 @@ function CategoryAccordionList({ catalogData, openCategory, setOpenCategory, onA
                 <strong>{group.items.length} articles</strong>
                 <span>{isOpen ? "−" : "+"}</span>
               </div>
-            </button>
+            </AnimatedButton>
             {isOpen && (
               <div className="accordion-panel">
                 <div className="category-chip-grid">
                   {group.items.map((item) => (
-                    <button
+                    <AnimatedButton
                       key={item}
                       type="button"
                       className="product-pill"
                       onClick={() => onAddItem(item, group.category)}
                     >
                       {item}
-                    </button>
+                    </AnimatedButton>
                   ))}
                 </div>
               </div>
@@ -142,9 +194,9 @@ function CustomProductComposer({ customItemName, setCustomItemName, onAddCustom 
           onChange={(event) => setCustomItemName(event.target.value)}
           placeholder="Nom du produit personnalise"
         />
-        <button type="button" className="primary-button" onClick={onAddCustom}>
+        <AnimatedButton type="button" className="primary-button" onClick={onAddCustom}>
           Ajouter
-        </button>
+        </AnimatedButton>
       </div>
     </div>
   );
@@ -174,43 +226,43 @@ function MobileOrderCards({
                 <strong>{item.name}</strong>
                 <span className="product-card__meta">{item.category}</span>
               </div>
-              <button
+              <AnimatedButton
                 type="button"
                 className="remove-button"
                 onClick={() => onRemove(item.id)}
                 aria-label={`Supprimer ${item.name}`}
               >
                 Supprimer
-              </button>
+              </AnimatedButton>
             </div>
 
             <div className="product-card__actions">
               <div className="qty-control">
-                <button
+                <AnimatedButton
                   type="button"
                   onClick={() => onAdjustQuantity(item.id, -1)}
                   aria-label={`Diminuer la quantite de ${item.name}`}
                 >
                   -
-                </button>
+                </AnimatedButton>
                 <span>{item.quantity}</span>
-                <button
+                <AnimatedButton
                   type="button"
                   onClick={() => onAdjustQuantity(item.id, 1)}
                   aria-label={`Augmenter la quantite de ${item.name}`}
                 >
                   +
-                </button>
+                </AnimatedButton>
               </div>
 
-              <button
+              <AnimatedButton
                 type="button"
                 className="secondary-button price-edit-trigger"
                 onClick={() => onOpenPriceEditor(item)}
                 aria-label={`Modifier le prix de ${item.name}`}
               >
                 Modifier le prix
-              </button>
+              </AnimatedButton>
             </div>
 
             <div className="product-card__footer">
@@ -250,21 +302,21 @@ function DesktopOrderTable({
               <td>{item.category}</td>
               <td>
                 <div className="qty-control compact">
-                  <button
+                  <AnimatedButton
                     type="button"
                     onClick={() => onAdjustQuantity(item.id, -1)}
                     aria-label={`Diminuer la quantite de ${item.name}`}
                   >
                     -
-                  </button>
+                  </AnimatedButton>
                   <span>{item.quantity}</span>
-                  <button
+                  <AnimatedButton
                     type="button"
                     onClick={() => onAdjustQuantity(item.id, 1)}
                     aria-label={`Augmenter la quantite de ${item.name}`}
                   >
                     +
-                  </button>
+                  </AnimatedButton>
                 </div>
               </td>
               <td>
@@ -281,13 +333,13 @@ function DesktopOrderTable({
               </td>
               <td>{formatCurrency(item.amount)}</td>
               <td>
-                <button
+                <AnimatedButton
                   type="button"
                   className="remove-button"
                   onClick={() => onRemove(item.id)}
                 >
                   Supprimer
-                </button>
+                </AnimatedButton>
               </td>
             </tr>
           ))}
@@ -315,12 +367,12 @@ function OrderSummaryCard({ lineCount, quantityTotal, total, onSave, onExport, i
         </div>
       </div>
       <div className="order-summary-card__actions">
-        <button type="button" className="secondary-button" onClick={onSave}>
+        <AnimatedButton type="button" className="save-button" onClick={onSave}>
           Sauvegarder
-        </button>
-        <button type="button" className="primary-button" onClick={onExport} disabled={isExportingPdf}>
+        </AnimatedButton>
+        <AnimatedButton type="button" className="primary-button" onClick={onExport} disabled={isExportingPdf}>
           {isExportingPdf ? "Generation..." : "Generer PDF"}
-        </button>
+        </AnimatedButton>
       </div>
     </div>
   );
@@ -362,12 +414,12 @@ function PriceEditorModal({
           </p>
         </div>
         <div className="price-modal__actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
+          <AnimatedButton type="button" className="secondary-button" onClick={onClose}>
             Annuler
-          </button>
-          <button type="button" className="primary-button" onClick={onSave}>
+          </AnimatedButton>
+          <AnimatedButton type="button" className="primary-button" onClick={onSave}>
             Enregistrer
-          </button>
+          </AnimatedButton>
         </div>
       </div>
     </div>
@@ -381,6 +433,7 @@ export default function App() {
   const [orderItems, setOrderItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [openCategory, setOpenCategory] = useState(catalog[0]?.category || "");
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [editingPriceItem, setEditingPriceItem] = useState(null);
@@ -491,6 +544,7 @@ export default function App() {
     });
 
     setActivePage("order");
+    setIsCatalogOpen(false);
   };
 
   const addCustomItem = () => {
@@ -641,14 +695,14 @@ export default function App() {
         </div>
         <nav className="desktop-nav-links" aria-label="Navigation principale">
           {pages.map((page) => (
-            <button
+            <AnimatedButton
               key={page.id}
               type="button"
               className={activePage === page.id ? "nav-chip active" : "nav-chip"}
               onClick={() => setActivePage(page.id)}
             >
               {page.label}
-            </button>
+            </AnimatedButton>
           ))}
         </nav>
       </header>
@@ -675,20 +729,20 @@ export default function App() {
                       l'interface.
                     </p>
                     <div className="hero-actions">
-                      <button
+                      <AnimatedButton
                         type="button"
                         className="primary-button hero-primary"
                         onClick={() => setActivePage("order")}
                       >
                         Nouvelle commande
-                      </button>
-                      <button
+                      </AnimatedButton>
+                      <AnimatedButton
                         type="button"
                         className="secondary-button hero-secondary"
                         onClick={() => setActivePage("settings")}
                       >
                         Parametres
-                      </button>
+                      </AnimatedButton>
                     </div>
                   </div>
 
@@ -754,13 +808,13 @@ export default function App() {
                       <p>{card.description}</p>
                       <small>{card.detail}</small>
                     </div>
-                    <button
+                    <AnimatedButton
                       type="button"
                       className="link-button"
                       onClick={() => setActivePage("settings")}
                     >
                       {card.actionLabel}
-                    </button>
+                    </AnimatedButton>
                   </article>
                 ))}
               </section>
@@ -777,7 +831,7 @@ export default function App() {
                 </div>
 
                 <div className="quick-links-grid">
-                  <button
+                  <AnimatedButton
                     type="button"
                     className="quick-link-tile"
                     onClick={() => setActivePage("order")}
@@ -785,8 +839,8 @@ export default function App() {
                     <span>Commande</span>
                     <strong>Ajouter et chiffrer des articles</strong>
                     <small>Catalogue par categories et total instantane</small>
-                  </button>
-                  <button
+                  </AnimatedButton>
+                  <AnimatedButton
                     type="button"
                     className="quick-link-tile"
                     onClick={() => setActivePage("history")}
@@ -794,8 +848,8 @@ export default function App() {
                     <span>Historique</span>
                     <strong>Reprendre une commande</strong>
                     <small>{history.length} sauvegarde(s) disponible(s)</small>
-                  </button>
-                  <button
+                  </AnimatedButton>
+                  <AnimatedButton
                     type="button"
                     className="quick-link-tile"
                     onClick={() => setActivePage("settings")}
@@ -803,7 +857,7 @@ export default function App() {
                     <span>Laboratoire</span>
                     <strong>Verifier les coordonnees PDF</strong>
                     <small>{settingsCompletion}% des informations completees</small>
-                  </button>
+                  </AnimatedButton>
                 </div>
               </section>
             </motion.section>
@@ -820,38 +874,45 @@ export default function App() {
             >
               <OrderPageHeader
                 onClear={clearOrder}
-                onSave={saveOrderToHistory}
-                onExport={generatePdf}
-                isExportingPdf={isExportingPdf}
                 lineCount={orderLineCount}
                 quantityTotal={totalQuantity}
                 total={total}
               />
 
               <section className="order-layout">
-                <section className="section-card catalog-panel">
-                  <div className="section-heading">
-                    <div>
-                      <p className="section-kicker">Catalogue</p>
-                      <h2>Selection rapide par categories</h2>
-                    </div>
+                <section className="section-card basket-panel">
+                  <div className="catalog-dropdown">
+                    <AnimatedButton
+                      type="button"
+                      className={isCatalogOpen ? "catalog-toggle open" : "catalog-toggle"}
+                      onClick={() => setIsCatalogOpen((current) => !current)}
+                      aria-expanded={isCatalogOpen}
+                    >
+                      <div>
+                        <span className="catalog-toggle__label">Catalogue</span>
+                        <strong>{totalCatalogItems} articles disponibles</strong>
+                      </div>
+                      <span className="catalog-toggle__arrow">{isCatalogOpen ? "^" : "v"}</span>
+                    </AnimatedButton>
+
+                    {isCatalogOpen && (
+                      <div className="catalog-panel">
+                        <CategoryAccordionList
+                          catalogData={catalog}
+                          openCategory={openCategory}
+                          setOpenCategory={setOpenCategory}
+                          onAddItem={addCatalogItemToOrder}
+                        />
+
+                        <CustomProductComposer
+                          customItemName={customItemName}
+                          setCustomItemName={setCustomItemName}
+                          onAddCustom={addCustomItem}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  <CategoryAccordionList
-                    catalogData={catalog}
-                    openCategory={openCategory}
-                    setOpenCategory={setOpenCategory}
-                    onAddItem={addCatalogItemToOrder}
-                  />
-
-                  <CustomProductComposer
-                    customItemName={customItemName}
-                    setCustomItemName={setCustomItemName}
-                    onAddCustom={addCustomItem}
-                  />
-                </section>
-
-                <section className="section-card basket-panel">
                   <div className="section-heading">
                     <div>
                       <p className="section-kicker">Panier</p>
@@ -890,13 +951,16 @@ export default function App() {
                       <p>
                         Selectionne une categorie ci-dessus pour commencer la commande.
                       </p>
-                      <button
+                      <AnimatedButton
                         type="button"
                         className="secondary-button"
-                        onClick={() => setOpenCategory(catalog[0]?.category || "")}
+                        onClick={() => {
+                          setIsCatalogOpen(true);
+                          setOpenCategory(catalog[0]?.category || "");
+                        }}
                       >
                         Ajouter depuis une categorie
-                      </button>
+                      </AnimatedButton>
                     </div>
                   )}
                 </section>
@@ -949,20 +1013,20 @@ export default function App() {
                           </p>
                         </div>
                         <div className="history-actions">
-                          <button
+                          <AnimatedButton
                             type="button"
                             className="secondary-button"
                             onClick={() => reloadHistoryItem(entry)}
                           >
                             Recharger
-                          </button>
-                          <button
+                          </AnimatedButton>
+                          <AnimatedButton
                             type="button"
                             className="ghost-button"
                             onClick={() => deleteHistoryItem(entry.id)}
                           >
                             Supprimer
-                          </button>
+                          </AnimatedButton>
                         </div>
                       </article>
                     ))}
@@ -1116,7 +1180,7 @@ export default function App() {
 
       <nav className="bottom-nav" aria-label="Navigation mobile">
         {pages.map((page) => (
-          <button
+          <AnimatedButton
             key={page.id}
             type="button"
             className={
@@ -1124,8 +1188,9 @@ export default function App() {
             }
             onClick={() => setActivePage(page.id)}
           >
+            <NavIcon icon={page.icon} />
             <span>{page.label}</span>
-          </button>
+          </AnimatedButton>
         ))}
       </nav>
     </div>
