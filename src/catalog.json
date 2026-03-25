@@ -1,68 +1,73 @@
 [
   {
-    "category": "Tubes par couleur",
+    "category": "Consommables",
     "items": [
-      "Tube violet",
-      "Tube gris",
-      "Tube vert",
-      "Tube rouge",
-      "Tube jaune",
-      "Tube bleu"
-    ]
-  },
-  {
-    "category": "Aiguilles de prélèvement",
-    "items": ["GPV10", "GPV21", "Autre aiguille"]
-  },
-  {
-    "category": "Paquets de gants",
-    "items": [
-      "Paquet de gants taille S",
-      "Paquet de gants taille M",
-      "Paquet de gants taille L"
-    ]
-  },
-  {
-    "category": "Consommables divers",
-    "items": [
-      "Paquets de lames",
+      "Tubes geles",
+      "Aiguilles GPV10",
+      "Aiguilles GPV21",
+      "Corps de pompe",
+      "Adaptateur",
+      "Lames",
       "Cotons",
       "Pipettes",
+      "Gants taille S",
+      "Gants taille M",
+      "Gants taille L",
       "Cuvettes",
+      "Divans / Supports",
+      "Flacons",
+      "Becher",
       "Embouts de pipette",
-      "Divans / supports",
-      "Flacons / béchers"
+      "Paquet de rames A4",
+      "Stylos",
+      "Carnet de recus de caisse",
+      "Alcool 1L",
+      "Eau distillee",
+      "Javel",
+      "Savon liquide",
+      "Essuie-tout"
     ]
   },
   {
-    "category": "Réactifs biologiques",
+    "category": "Reactifs Biologie",
     "items": [
-      "Numération formule sanguine (NFS)",
-      "Glycémie (Glucose)",
-      "Fièvre typhoïde",
+      "NFS Diluant BC30s",
+      "Lyse BC30s",
+      "Glycemie",
+      "Fievre typhoide",
       "CRP",
-      "Toxo",
-      "Rubéole",
-      "Hépatite B",
+      "Toxoplasmose",
+      "Rubeole",
+      "Hepatite B",
       "HIV",
-      "Sérologie SWF",
-      "Cassettes électrophorèse myoglobine",
-      "Réactifs urinaires (Glucose, Protéine, Sang)",
+      "Serologie SWF",
+      "Myoglobine",
       "PCR"
     ]
   },
   {
-    "category": "Kits spécifiques",
+    "category": "Analyses Urinaires",
     "items": [
-      "Kit sérologie SWF",
-      "Kit sérologie CRP",
+      "Bandelettes Glucose",
+      "Bandelettes Proteine",
+      "Bandelettes Sang",
+      "Sediment urinaire"
+    ]
+  },
+  {
+    "category": "Kits Specifiques",
+    "items": [
+      "Kit Serologie SWF",
+      "Kit CRP",
       "Kit ELISA",
-      "Kit hématologie",
-      "Kit coagulation"
+      "Kit Hematologie",
+      "Kit Coagulation",
+      "Kit Electrophorese",
+      "Kit ABO"
     ]
   },
   {
     "category": "Autres",
-    "items": ["Article personnalisé"]
+    "items": ["Produit personnalise"]
   }
 ]

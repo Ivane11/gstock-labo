@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import defaultCatalog from "./catalog.json";
+import catalog from "./catalog.json";
 import { buildOrderPdf, formatCurrency } from "./pdf";
 
-const introDelayMs = 2200;
+const introDelayMs = 1800;
 const storageKeys = {
-  lab: "grimoire-lab-info",
-  orders: "grimoire-order-history",
-  catalog: "grimoire-custom-catalog",
-  theme: "grimoire-theme",
+  lab: "gstock-lab-info",
+  history: "gstock-order-history",
 };
+
+const pages = [
+  { id: "home", label: "Accueil" },
+  { id: "order", label: "Nouvelle Commande" },
+  { id: "history", label: "Historique" },
+  { id: "settings", label: "Parametres" },
+];
 
 const defaultLabInfo = {
   name: "",
@@ -17,51 +22,369 @@ const defaultLabInfo = {
   address: "",
   supplierEmail: "",
   shippingPlace: "",
-  receiverName: "",
-  receiverPhone: "",
   shippingCity: "",
-  transportCompany: "",
 };
 
-const sections = [
-  { id: "commande", label: "Commande" },
-  { id: "laboratoire", label: "Laboratoire" },
-  { id: "catalogue", label: "Catalogue" },
-  { id: "historique", label: "Historique" },
-];
+function createOrderItem(name, category) {
+  return {
+    id: crypto.randomUUID(),
+    name,
+    category,
+    quantity: 1,
+    unitPrice: 0,
+    amount: 0,
+  };
+}
 
-const themeOptions = [
-  { id: "theme-default", name: "Theme par defaut", accent: "#4db6ff" },
-  { id: "theme-sunset", name: "Theme Sable", accent: "#ff9b71" },
-  { id: "theme-mint", name: "Theme Menthe", accent: "#37c89b" },
-  { id: "theme-night", name: "Theme Nuit", accent: "#8ca2ff" },
-];
+function OrderPageHeader({
+  onClear,
+  onSave,
+  onExport,
+  isExportingPdf,
+  lineCount,
+  quantityTotal,
+  total,
+}) {
+  return (
+    <section className="section-card order-page-header">
+      <div className="section-heading">
+        <div>
+          <p className="section-kicker">Nouvelle commande</p>
+          <h2>Preparez une commande</h2>
+          <p className="section-description">
+            Selection par categories, panier tactile sur mobile et tableau lisible
+            sur desktop.
+          </p>
+        </div>
+        <div className="order-actions">
+          <button type="button" className="secondary-button" onClick={onClear}>
+            Vider la commande
+          </button>
+          <button type="button" className="secondary-button" onClick={onSave}>
+            Sauvegarder
+          </button>
+          <button type="button" className="primary-button" onClick={onExport} disabled={isExportingPdf}>
+            {isExportingPdf ? "Generation..." : "Generer PDF"}
+          </button>
+        </div>
+      </div>
 
-const buildDraft = (catalog) => ({
-  category: catalog[0]?.category || "",
-  name: catalog[0]?.items[0] || "",
-  customName: "",
-  quantity: 1,
-  unitPrice: "",
-});
+      <div className="order-summary-strip">
+        <div>
+          <span>Lignes</span>
+          <strong>{lineCount}</strong>
+        </div>
+        <div>
+          <span>Quantite totale</span>
+          <strong>{quantityTotal}</strong>
+        </div>
+        <div>
+          <span>Total general</span>
+          <strong>{formatCurrency(total)}</strong>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CategoryAccordionList({ catalogData, openCategory, setOpenCategory, onAddItem }) {
+  return (
+    <div className="accordion-list">
+      {catalogData.map((group) => {
+        const isOpen = openCategory === group.category;
+        return (
+          <article key={group.category} className={isOpen ? "category-card open" : "category-card"}>
+            <button
+              type="button"
+              className="category-card__header"
+              onClick={() => setOpenCategory(isOpen ? "" : group.category)}
+              aria-expanded={isOpen}
+            >
+              <span>{group.category}</span>
+              <div className="category-card__meta">
+                <strong>{group.items.length} articles</strong>
+                <span>{isOpen ? "−" : "+"}</span>
+              </div>
+            </button>
+            {isOpen && (
+              <div className="accordion-panel">
+                <div className="category-chip-grid">
+                  {group.items.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className="product-pill"
+                      onClick={() => onAddItem(item, group.category)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function CustomProductComposer({ customItemName, setCustomItemName, onAddCustom }) {
+  return (
+    <div className="custom-add-card">
+      <div>
+        <h3>Ajouter autre produit</h3>
+        <p>Saisis un produit hors liste et ajoute-le directement au panier.</p>
+      </div>
+      <div className="custom-add-row">
+        <input
+          value={customItemName}
+          onChange={(event) => setCustomItemName(event.target.value)}
+          placeholder="Nom du produit personnalise"
+        />
+        <button type="button" className="primary-button" onClick={onAddCustom}>
+          Ajouter
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MobileOrderCards({
+  items,
+  onAdjustQuantity,
+  onRemove,
+  onOpenPriceEditor,
+}) {
+  return (
+    <div className="order-cards-mobile">
+      <AnimatePresence initial={false}>
+        {items.map((item) => (
+          <motion.article
+            key={item.id}
+            className="product-card-mobile"
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.18 }}
+          >
+            <div className="product-card__top">
+              <div>
+                <strong>{item.name}</strong>
+                <span className="product-card__meta">{item.category}</span>
+              </div>
+              <button
+                type="button"
+                className="remove-button"
+                onClick={() => onRemove(item.id)}
+                aria-label={`Supprimer ${item.name}`}
+              >
+                Supprimer
+              </button>
+            </div>
+
+            <div className="product-card__actions">
+              <div className="qty-control">
+                <button
+                  type="button"
+                  onClick={() => onAdjustQuantity(item.id, -1)}
+                  aria-label={`Diminuer la quantite de ${item.name}`}
+                >
+                  -
+                </button>
+                <span>{item.quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => onAdjustQuantity(item.id, 1)}
+                  aria-label={`Augmenter la quantite de ${item.name}`}
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className="secondary-button price-edit-trigger"
+                onClick={() => onOpenPriceEditor(item)}
+                aria-label={`Modifier le prix de ${item.name}`}
+              >
+                Modifier le prix
+              </button>
+            </div>
+
+            <div className="product-card__footer">
+              <span>P.U. : {formatCurrency(item.unitPrice)}</span>
+              <strong>{formatCurrency(item.amount)}</strong>
+            </div>
+          </motion.article>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function DesktopOrderTable({
+  items,
+  onAdjustQuantity,
+  onUpdateOrderItem,
+  onRemove,
+}) {
+  return (
+    <div className="order-table-desktop">
+      <table>
+        <thead>
+          <tr>
+            <th>Designation</th>
+            <th>Categorie</th>
+            <th>Quantite</th>
+            <th>P.U.</th>
+            <th>Montant</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id}>
+              <td>{item.name}</td>
+              <td>{item.category}</td>
+              <td>
+                <div className="qty-control compact">
+                  <button
+                    type="button"
+                    onClick={() => onAdjustQuantity(item.id, -1)}
+                    aria-label={`Diminuer la quantite de ${item.name}`}
+                  >
+                    -
+                  </button>
+                  <span>{item.quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => onAdjustQuantity(item.id, 1)}
+                    aria-label={`Augmenter la quantite de ${item.name}`}
+                  >
+                    +
+                  </button>
+                </div>
+              </td>
+              <td>
+                <input
+                  className="table-input"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={item.unitPrice}
+                  onChange={(event) =>
+                    onUpdateOrderItem(item.id, { unitPrice: event.target.value })
+                  }
+                />
+              </td>
+              <td>{formatCurrency(item.amount)}</td>
+              <td>
+                <button
+                  type="button"
+                  className="remove-button"
+                  onClick={() => onRemove(item.id)}
+                >
+                  Supprimer
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function OrderSummaryCard({ lineCount, quantityTotal, total, onSave, onExport, isExportingPdf }) {
+  return (
+    <div className="order-summary-card">
+      <div className="order-summary-card__stats">
+        <div>
+          <span>Lignes</span>
+          <strong>{lineCount}</strong>
+        </div>
+        <div>
+          <span>Quantite totale</span>
+          <strong>{quantityTotal}</strong>
+        </div>
+        <div>
+          <span>Total general</span>
+          <strong>{formatCurrency(total)}</strong>
+        </div>
+      </div>
+      <div className="order-summary-card__actions">
+        <button type="button" className="secondary-button" onClick={onSave}>
+          Sauvegarder
+        </button>
+        <button type="button" className="primary-button" onClick={onExport} disabled={isExportingPdf}>
+          {isExportingPdf ? "Generation..." : "Generer PDF"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PriceEditorModal({
+  editingPriceItem,
+  editingPriceValue,
+  onChange,
+  onClose,
+  onSave,
+}) {
+  if (!editingPriceItem) {
+    return null;
+  }
+
+  return (
+    <div className="price-modal" role="dialog" aria-modal="true" aria-labelledby="price-editor-title">
+      <button type="button" className="price-modal__overlay" onClick={onClose} aria-label="Fermer la fenetre de prix" />
+      <div className="price-modal__sheet">
+        <div className="price-modal__content">
+          <p className="section-kicker">Edition du prix</p>
+          <h3 id="price-editor-title">Modifier le prix</h3>
+          <p className="price-modal__product">{editingPriceItem.name}</p>
+          <label>
+            Prix unitaire
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={editingPriceValue}
+              onChange={(event) => onChange(event.target.value)}
+              inputMode="numeric"
+              autoFocus
+            />
+          </label>
+          <p className="price-modal__hint">
+            Prix actuel : {formatCurrency(editingPriceItem.unitPrice)}
+          </p>
+        </div>
+        <div className="price-modal__actions">
+          <button type="button" className="secondary-button" onClick={onClose}>
+            Annuler
+          </button>
+          <button type="button" className="primary-button" onClick={onSave}>
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
-  const [activeSection, setActiveSection] = useState("commande");
-  const [theme, setTheme] = useState(themeOptions[0].id);
+  const [activePage, setActivePage] = useState("home");
   const [labInfo, setLabInfo] = useState(defaultLabInfo);
-  const [catalog, setCatalog] = useState(defaultCatalog);
-  const [draft, setDraft] = useState(() => buildDraft(defaultCatalog));
   const [orderItems, setOrderItems] = useState([]);
   const [history, setHistory] = useState([]);
-  const [search, setSearch] = useState("");
-  const [catalogEditor, setCatalogEditor] = useState({
-    category: defaultCatalog[0]?.category || "",
-    newCategory: "",
-    itemName: "",
-  });
-  const [installStatus, setInstallStatus] = useState("Navigation prete pour mobile.");
+  const [openCategory, setOpenCategory] = useState(catalog[0]?.category || "");
+  const [customItemName, setCustomItemName] = useState("");
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [editingPriceItem, setEditingPriceItem] = useState(null);
+  const [editingPriceValue, setEditingPriceValue] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowIntro(false), introDelayMs);
@@ -69,21 +392,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const storedLab = window.localStorage.getItem(storageKeys.lab);
-    const storedHistory = window.localStorage.getItem(storageKeys.orders);
-    const storedCatalog = window.localStorage.getItem(storageKeys.catalog);
-    const storedTheme = window.localStorage.getItem(storageKeys.theme);
+    const storedLabInfo = window.localStorage.getItem(storageKeys.lab);
+    const storedHistory = window.localStorage.getItem(storageKeys.history);
 
-    if (storedLab) setLabInfo(JSON.parse(storedLab));
-    if (storedHistory) setHistory(JSON.parse(storedHistory));
-    if (storedCatalog) {
-      const parsedCatalog = JSON.parse(storedCatalog);
-      setCatalog(parsedCatalog);
-      setDraft(buildDraft(parsedCatalog));
-      setCatalogEditor((current) => ({ ...current, category: parsedCatalog[0]?.category || "" }));
+    if (storedLabInfo) {
+      setLabInfo({ ...defaultLabInfo, ...JSON.parse(storedLabInfo) });
     }
-    if (storedTheme && themeOptions.some((option) => option.id === storedTheme)) {
-      setTheme(storedTheme);
+    if (storedHistory) {
+      setHistory(JSON.parse(storedHistory));
     }
   }, []);
 
@@ -92,582 +408,568 @@ export default function App() {
   }, [labInfo]);
 
   useEffect(() => {
-    window.localStorage.setItem(storageKeys.orders, JSON.stringify(history));
+    window.localStorage.setItem(storageKeys.history, JSON.stringify(history));
   }, [history]);
 
-  useEffect(() => {
-    window.localStorage.setItem(storageKeys.catalog, JSON.stringify(catalog));
-  }, [catalog]);
+  const total = useMemo(
+    () => orderItems.reduce((sum, item) => sum + item.amount, 0),
+    [orderItems]
+  );
+  const totalQuantity = useMemo(
+    () => orderItems.reduce((sum, item) => sum + item.quantity, 0),
+    [orderItems]
+  );
+  const orderLineCount = orderItems.length;
 
-  useEffect(() => {
-    window.localStorage.setItem(storageKeys.theme, theme);
-  }, [theme]);
+  const totalCatalogItems = useMemo(
+    () => catalog.reduce((sum, group) => sum + group.items.length, 0),
+    []
+  );
 
-  useEffect(() => {
-    const onOnline = () => setInstallStatus("Connexion retablie.");
-    const onOffline = () => setInstallStatus("Mode hors ligne actif.");
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    return () => {
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-    };
-  }, []);
+  const quickStats = useMemo(
+    () => [
+      { label: "Articles references", value: totalCatalogItems },
+      { label: "Commande en cours", value: orderItems.length },
+      { label: "Commandes en attente", value: history.length },
+      { label: "Total actuel", value: formatCurrency(total) },
+    ],
+    [history.length, orderItems.length, total, totalCatalogItems]
+  );
 
-  const currentItems = useMemo(() => {
-    const categoryEntry = catalog.find((entry) => entry.category === draft.category);
-    const filtered = categoryEntry?.items ?? [];
-    if (!search.trim()) return filtered;
-    return filtered.filter((item) => item.toLowerCase().includes(search.trim().toLowerCase()));
-  }, [catalog, draft.category, search]);
+  const summaryCards = [
+    {
+      title: "Informations laboratoire",
+      description: labInfo.name || "Renseigne le nom du laboratoire et ses coordonnees.",
+      detail: labInfo.phone || "Telephone non renseigne",
+      actionLabel: "Modifier",
+    },
+    {
+      title: "Contact fournisseur",
+      description:
+        labInfo.supplierEmail || "Ajoute l'email du fournisseur pour l'envoi du PDF.",
+      detail: labInfo.shippingPlace || "Aucun lieu d'expedition renseigne",
+      actionLabel: "Completer",
+    },
+  ];
 
-  useEffect(() => {
-    const categoryEntry = catalog.find((entry) => entry.category === draft.category) || catalog[0];
-    if (!categoryEntry) return;
-    if (!catalog.some((entry) => entry.category === draft.category)) {
-      setDraft(buildDraft(catalog));
-      return;
-    }
-    if (draft.category !== "Autres" && !categoryEntry.items.includes(draft.name)) {
-      setDraft((current) => ({ ...current, name: categoryEntry.items[0] || "" }));
-    }
-  }, [catalog, draft.category, draft.name]);
-
-  useEffect(() => {
-    if (!catalog.some((entry) => entry.category === catalogEditor.category)) {
-      setCatalogEditor((current) => ({ ...current, category: catalog[0]?.category || "" }));
-    }
-  }, [catalog, catalogEditor.category]);
-
-  const total = useMemo(() => orderItems.reduce((sum, item) => sum + item.amount, 0), [orderItems]);
-
-  const kpis = useMemo(() => {
-    const totalQuantity = orderItems.reduce((sum, item) => sum + item.quantity, 0);
-    const categoryCount = new Set(orderItems.map((item) => item.category)).size;
-    const averageBasket = orderItems.length ? total / orderItems.length : 0;
-    return [
-      { label: "Lignes", value: String(orderItems.length) },
-      { label: "Quantite totale", value: String(totalQuantity) },
-      { label: "Categories", value: String(categoryCount) },
-      { label: "Panier moyen", value: formatCurrency(averageBasket) },
-    ];
-  }, [orderItems, total]);
-
-  const updateLabField = (field, value) => setLabInfo((current) => ({ ...current, [field]: value }));
-
-  const addItem = () => {
-    const resolvedName = draft.category === "Autres" ? draft.customName.trim() : draft.name;
-    const quantity = Number(draft.quantity);
-    const unitPrice = Number(draft.unitPrice);
-    if (!resolvedName || quantity <= 0 || unitPrice < 0 || Number.isNaN(unitPrice)) return;
-
-    setOrderItems((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        category: draft.category,
-        name: resolvedName,
-        quantity,
-        unitPrice,
-        amount: quantity * unitPrice,
-      },
-    ]);
-
-    setDraft((current) => ({ ...current, customName: "", quantity: 1, unitPrice: "" }));
+  const updateLabInfo = (field, value) => {
+    setLabInfo((current) => ({ ...current, [field]: value }));
   };
 
-  const updateQuantity = (id, delta) => {
+  const addCatalogItemToOrder = (name, category) => {
+    setOrderItems((current) => {
+      const existing = current.find(
+        (item) => item.name === name && item.category === category
+      );
+
+      if (existing) {
+        return current.map((item) => {
+          if (item.id !== existing.id) {
+            return item;
+          }
+          const quantity = item.quantity + 1;
+          return { ...item, quantity, amount: quantity * item.unitPrice };
+        });
+      }
+
+      return [...current, createOrderItem(name, category)];
+    });
+
+    setActivePage("order");
+  };
+
+  const addCustomItem = () => {
+    const trimmedName = customItemName.trim();
+    if (!trimmedName) {
+      return;
+    }
+    addCatalogItemToOrder(trimmedName, "Autres");
+    setCustomItemName("");
+  };
+
+  const updateOrderItem = (id, updates) => {
     setOrderItems((current) =>
       current.map((item) => {
-        if (item.id !== id) return item;
+        if (item.id !== id) {
+          return item;
+        }
+        const nextItem = { ...item, ...updates };
+        const quantity = Math.max(1, Number(nextItem.quantity) || 1);
+        const unitPrice = Math.max(0, Number(nextItem.unitPrice) || 0);
+        return {
+          ...nextItem,
+          quantity,
+          unitPrice,
+          amount: quantity * unitPrice,
+        };
+      })
+    );
+  };
+
+  const adjustQuantity = (id, delta) => {
+    setOrderItems((current) =>
+      current.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
         const quantity = Math.max(1, item.quantity + delta);
         return { ...item, quantity, amount: quantity * item.unitPrice };
       })
     );
   };
 
-  const removeItem = (id) => setOrderItems((current) => current.filter((item) => item.id !== id));
+  const removeOrderItem = (id) => {
+    setOrderItems((current) => current.filter((item) => item.id !== id));
+  };
 
-  const saveToHistory = () => {
-    if (!orderItems.length) return;
-    setHistory((current) => [
-      {
+  const clearOrder = () => {
+    setOrderItems([]);
+  };
+
+  const saveOrderToHistory = () => {
+    if (!orderItems.length) {
+      return;
+    }
+
+    const snapshot = {
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      total,
+      items: orderItems,
+    };
+
+    setHistory((current) => [snapshot, ...current].slice(0, 30));
+  };
+
+  const reloadHistoryItem = (entry) => {
+    setOrderItems(
+      entry.items.map((item) => ({
+        ...item,
         id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        total,
-        items: orderItems,
-      },
-      ...current,
-    ].slice(0, 20));
+      }))
+    );
+    setActivePage("order");
   };
 
-  const clearCurrentOrder = () => setOrderItems([]);
-
-  const reuseOrder = (entry) => {
-    setOrderItems(entry.items.map((item) => ({ ...item, id: crypto.randomUUID() })));
-    setActiveSection("commande");
+  const deleteHistoryItem = (id) => {
+    setHistory((current) => current.filter((entry) => entry.id !== id));
   };
 
-  const deleteHistoryEntry = (id) => setHistory((current) => current.filter((entry) => entry.id !== id));
+  const openPriceEditor = (item) => {
+    setEditingPriceItem(item);
+    setEditingPriceValue(String(item.unitPrice || 0));
+  };
+
+  const closePriceEditor = () => {
+    setEditingPriceItem(null);
+    setEditingPriceValue("");
+  };
+
+  const savePriceEditor = () => {
+    if (!editingPriceItem) {
+      return;
+    }
+    updateOrderItem(editingPriceItem.id, { unitPrice: editingPriceValue });
+    closePriceEditor();
+  };
 
   const generatePdf = async () => {
-    if (!orderItems.length || isExportingPdf) return;
+    if (!orderItems.length || isExportingPdf) {
+      return;
+    }
+
     setIsExportingPdf(true);
 
     try {
       const doc = await buildOrderPdf({ labInfo, items: orderItems, total });
-      doc.save(`commande-${(labInfo.name || "laboratoire").replace(/\s+/g, "-").toLowerCase()}.pdf`);
-
-      if (labInfo.supplierEmail) {
-        const subject = encodeURIComponent(`Commande Laboratoire - ${labInfo.name || "Laboratoire"}`);
-        const body = encodeURIComponent(
-          `Bonjour,\n\nVeuillez trouver la commande preparee.\nTotal general: ${formatCurrency(total)}.\n\nCordialement.`
-        );
-        window.open(`mailto:${labInfo.supplierEmail}?subject=${subject}&body=${body}`, "_blank");
-      }
+      doc.save(
+        `commande-${(labInfo.name || "gstock-labo")
+          .replace(/\s+/g, "-")
+          .toLowerCase()}.pdf`
+      );
     } finally {
       setIsExportingPdf(false);
     }
   };
 
-  const saveAndExport = async () => {
-    saveToHistory();
-    await generatePdf();
-  };
-
-  const addCatalogCategory = () => {
-    const categoryName = catalogEditor.newCategory.trim();
-    if (!categoryName || catalog.some((entry) => entry.category === categoryName)) return;
-    const nextCatalog = [...catalog, { category: categoryName, items: [] }];
-    setCatalog(nextCatalog);
-    setCatalogEditor({ category: categoryName, newCategory: "", itemName: "" });
-    setDraft((current) => ({ ...current, category: categoryName, name: "" }));
-  };
-
-  const addCatalogItem = () => {
-    const itemName = catalogEditor.itemName.trim();
-    if (!catalogEditor.category || !itemName) return;
-    setCatalog((current) =>
-      current.map((entry) => {
-        if (entry.category !== catalogEditor.category || entry.items.includes(itemName)) return entry;
-        return { ...entry, items: [...entry.items, itemName] };
-      })
-    );
-    setCatalogEditor((current) => ({ ...current, itemName: "" }));
-  };
-
-  const removeCatalogItem = (categoryName, itemName) => {
-    setCatalog((current) =>
-      current.map((entry) =>
-        entry.category === categoryName
-          ? { ...entry, items: entry.items.filter((item) => item !== itemName) }
-          : entry
-      )
-    );
-  };
-
-  const resetCatalog = () => {
-    setCatalog(defaultCatalog);
-    setCatalogEditor({ category: defaultCatalog[0]?.category || "", newCategory: "", itemName: "" });
-    setDraft(buildDraft(defaultCatalog));
-  };
-
-  const exportCatalog = () => {
-    const blob = new Blob([JSON.stringify(catalog, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "catalogue-grimoire.json";
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importCatalog = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    const parsed = JSON.parse(text);
-    if (!Array.isArray(parsed)) return;
-    setCatalog(parsed);
-    setCatalogEditor({ category: parsed[0]?.category || "", newCategory: "", itemName: "" });
-    setDraft(buildDraft(parsed));
-    event.target.value = "";
-  };
-
-  const summaryRows = [
-    { label: "Nom labo", value: labInfo.name || "-" },
-    { label: "Telephone", value: labInfo.phone || "-" },
-    { label: "Ville", value: labInfo.shippingCity || "-" },
-    { label: "Reception", value: labInfo.receiverName || "-" },
-    { label: "Contact reception", value: labInfo.receiverPhone || "-" },
-    { label: "Transport", value: labInfo.transportCompany || "-" },
-  ];
-
   return (
-    <div className="app-shell" data-theme={theme}>
+    <div className="app-shell app-shell-v2">
       <AnimatePresence>
         {showIntro && (
           <motion.section
-            className="intro-screen"
+            className="splash-screen"
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.03 }}
-            transition={{ duration: 0.5 }}
+            exit={{ opacity: 0, scale: 1.04 }}
+            transition={{ duration: 0.45 }}
           >
             <motion.div
-              className="intro-card"
-              initial={{ opacity: 0, y: 40 }}
+              className="splash-card"
+              initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
+              transition={{ duration: 0.6 }}
             >
-              <div className="intro-badge">Nom Grimoire</div>
-              <h1>Gestion des stocks et commandes du laboratoire</h1>
-              <p>Commande tactile, totaux en FCFA, PDF propre et transition fluide vers la preparation.</p>
+              <span className="splash-badge">G-Stock Labo</span>
+              <h1>La precision au service de votre laboratoire</h1>
+              <p>
+                Interface mobile-first, claire, rapide et professionnelle pour vos
+                commandes.
+              </p>
             </motion.div>
           </motion.section>
         )}
       </AnimatePresence>
 
-      <main className="layout">
-        <section className="hero-panel">
-          <div className="hero-copy-block">
-            <div className="hero-topline">
-              <p className="eyebrow">Dashboard mobile</p>
-              <span className="status-pill">{installStatus}</span>
-            </div>
-            <h2>Commande laboratoire en FCFA, claire sur smartphone et prete pour le PDF</h2>
-            <p className="hero-copy">
-              Selection rapide par categorie, ajout d&apos;autres articles, total automatique, expedition complete et themes visuels.
-            </p>
-            <nav className="section-tabs" aria-label="Sections principales">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  className={section.id === activeSection ? "tab-button active" : "tab-button"}
-                  onClick={() => setActiveSection(section.id)}
-                >
-                  {section.label}
-                </button>
-              ))}
-            </nav>
-          </div>
+      <header className="desktop-nav">
+        <div>
+          <p className="brand-kicker">G-Stock Labo</p>
+          <h2 className="brand-title">Gestion de stock et commandes</h2>
+        </div>
+        <nav className="desktop-nav-links" aria-label="Navigation principale">
+          {pages.map((page) => (
+            <button
+              key={page.id}
+              type="button"
+              className={activePage === page.id ? "nav-chip active" : "nav-chip"}
+              onClick={() => setActivePage(page.id)}
+            >
+              {page.label}
+            </button>
+          ))}
+        </nav>
+      </header>
 
-          <motion.div className="hero-visual" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-            <div className="hero-orbit hero-orbit-one" />
-            <div className="hero-orbit hero-orbit-two" />
-            <motion.img
-              src="/Medicine-bro.svg"
-              alt="Illustration dashboard laboratoire"
-              className="hero-image"
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </motion.div>
-        </section>
-
+      <main className="app-main">
         <AnimatePresence mode="wait">
-          {activeSection === "commande" && (
-            <motion.div key="commande" className="section-stack" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.28 }}>
-              <section className="kpi-grid">
-                {kpis.map((item, index) => (
-                  <motion.article key={item.label} className="kpi-card" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: index * 0.05 }}>
+          {activePage === "home" && (
+            <motion.section
+              key="home"
+              className="page-stack"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.24 }}
+            >
+              <section className="hero-card">
+                <div>
+                  <p className="hero-kicker">Accueil</p>
+                  <h1>Un tableau de bord simple, lisible et efficace.</h1>
+                  <p className="hero-text">
+                    Suis l'etat du stock, prepare une nouvelle commande rapidement et
+                    retrouve les informations du laboratoire sans te perdre dans
+                    l'interface.
+                  </p>
+                </div>
+                <div className="hero-actions">
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() => setActivePage("order")}
+                  >
+                    Nouvelle commande
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setActivePage("settings")}
+                  >
+                    Parametres
+                  </button>
+                </div>
+              </section>
+
+              <section className="stats-grid">
+                {quickStats.map((item) => (
+                  <article key={item.label} className="stat-card">
                     <span>{item.label}</span>
                     <strong>{item.value}</strong>
-                  </motion.article>
+                  </article>
                 ))}
               </section>
 
-              <section className="content-grid">
-                <article className="panel">
-                  <div className="panel-head">
-                    <h3>Ajouter a la commande</h3>
-                    <span className="panel-note">Boutons larges et listes tactiles</span>
+              <section className="summary-grid">
+                {summaryCards.map((card) => (
+                  <article key={card.title} className="info-card">
+                    <div>
+                      <h3>{card.title}</h3>
+                      <p>{card.description}</p>
+                      <small>{card.detail}</small>
+                    </div>
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => setActivePage("settings")}
+                    >
+                      {card.actionLabel}
+                    </button>
+                  </article>
+                ))}
+              </section>
+            </motion.section>
+          )}
+
+          {activePage === "order" && (
+            <motion.section
+              key="order"
+              className="page-stack"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.24 }}
+            >
+              <OrderPageHeader
+                onClear={clearOrder}
+                onSave={saveOrderToHistory}
+                onExport={generatePdf}
+                isExportingPdf={isExportingPdf}
+                lineCount={orderLineCount}
+                quantityTotal={totalQuantity}
+                total={total}
+              />
+
+              <section className="order-layout">
+                <section className="section-card catalog-panel">
+                  <div className="section-heading">
+                    <div>
+                      <p className="section-kicker">Catalogue</p>
+                      <h2>Selection rapide par categories</h2>
+                    </div>
                   </div>
-                  <div className="form-grid">
-                    <label>
-                      Categorie
-                      <select
-                        value={draft.category}
-                        onChange={(event) => {
-                          const selectedCategory = event.target.value;
-                          const nextItems = catalog.find((entry) => entry.category === selectedCategory)?.items || [];
-                          setDraft({ ...draft, category: selectedCategory, name: nextItems[0] || "", customName: "" });
-                          setSearch("");
-                        }}
+
+                  <CategoryAccordionList
+                    catalogData={catalog}
+                    openCategory={openCategory}
+                    setOpenCategory={setOpenCategory}
+                    onAddItem={addCatalogItemToOrder}
+                  />
+
+                  <CustomProductComposer
+                    customItemName={customItemName}
+                    setCustomItemName={setCustomItemName}
+                    onAddCustom={addCustomItem}
+                  />
+                </section>
+
+                <section className="section-card basket-panel">
+                  <div className="section-heading">
+                    <div>
+                      <p className="section-kicker">Panier</p>
+                      <h2>Commande en temps reel</h2>
+                    </div>
+                  </div>
+
+                  {orderItems.length ? (
+                    <>
+                      <MobileOrderCards
+                        items={orderItems}
+                        onAdjustQuantity={adjustQuantity}
+                        onRemove={removeOrderItem}
+                        onOpenPriceEditor={openPriceEditor}
+                      />
+
+                      <DesktopOrderTable
+                        items={orderItems}
+                        onAdjustQuantity={adjustQuantity}
+                        onUpdateOrderItem={updateOrderItem}
+                        onRemove={removeOrderItem}
+                      />
+
+                      <OrderSummaryCard
+                        lineCount={orderLineCount}
+                        quantityTotal={totalQuantity}
+                        total={total}
+                        onSave={saveOrderToHistory}
+                        onExport={generatePdf}
+                        isExportingPdf={isExportingPdf}
+                      />
+                    </>
+                  ) : (
+                    <div className="empty-state">
+                      <h3>Aucun produit ajoute</h3>
+                      <p>
+                        Selectionne une categorie ci-dessus pour commencer la commande.
+                      </p>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => setOpenCategory(catalog[0]?.category || "")}
                       >
-                        {catalog.map((entry) => (
-                          <option key={entry.category} value={entry.category}>
-                            {entry.category}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                        Ajouter depuis une categorie
+                      </button>
+                    </div>
+                  )}
+                </section>
+              </section>
+            </motion.section>
+          )}
 
-                    {draft.category !== "Autres" ? (
-                      <>
-                        <label>
-                          Recherche
-                          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Chercher un article" />
-                        </label>
-                        <label>
-                          Designation
-                          <select value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })}>
-                            {currentItems.map((item) => (
-                              <option key={item} value={item}>
-                                {item}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </>
-                    ) : (
-                      <label>
-                        Article libre
-                        <input value={draft.customName} onChange={(event) => setDraft({ ...draft, customName: event.target.value })} placeholder="Saisir un article" />
-                      </label>
-                    )}
-
-                    <label>
-                      Quantite
-                      <div className="stepper">
-                        <button type="button" onClick={() => setDraft({ ...draft, quantity: Math.max(1, draft.quantity - 1) })}>-</button>
-                        <input type="number" min="1" value={draft.quantity} onChange={(event) => setDraft({ ...draft, quantity: Math.max(1, Number(event.target.value) || 1) })} />
-                        <button type="button" onClick={() => setDraft({ ...draft, quantity: draft.quantity + 1 })}>+</button>
-                      </div>
-                    </label>
-
-                    <label>
-                      Prix unitaire (FCFA)
-                      <input type="number" min="0" step="1" value={draft.unitPrice} onChange={(event) => setDraft({ ...draft, unitPrice: event.target.value })} placeholder="3000" />
-                    </label>
+          {activePage === "history" && (
+            <motion.section
+              key="history"
+              className="page-stack"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.24 }}
+            >
+              <section className="section-card">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-kicker">Historique</p>
+                    <h2>Recharger une commande precedente</h2>
                   </div>
+                </div>
 
-                  <div className="button-row">
-                    <button className="primary-button" type="button" onClick={addItem}>Ajouter la ligne</button>
-                    <button className="secondary-button" type="button" onClick={clearCurrentOrder}>Vider la commande</button>
-                  </div>
-                </article>
-
-                <article className="panel compact-panel">
-                  <div className="panel-head">
-                    <h3>Expedition</h3>
-                  </div>
-                  <div className="summary-list">
-                    {summaryRows.map((row) => (
-                      <div key={row.label}>
-                        <span>{row.label}</span>
-                        <strong>{row.value}</strong>
-                      </div>
+                {history.length ? (
+                  <div className="history-list">
+                    {history.map((entry) => (
+                      <article key={entry.id} className="history-entry">
+                        <div>
+                          <strong>
+                            {new Date(entry.createdAt).toLocaleString("fr-FR")}
+                          </strong>
+                          <p>
+                            {entry.items.length} ligne(s) -{" "}
+                            {formatCurrency(entry.total)}
+                          </p>
+                        </div>
+                        <div className="history-actions">
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() => reloadHistoryItem(entry)}
+                          >
+                            Recharger
+                          </button>
+                          <button
+                            type="button"
+                            className="ghost-button"
+                            onClick={() => deleteHistoryItem(entry.id)}
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </article>
                     ))}
                   </div>
-                </article>
+                ) : (
+                  <div className="empty-state">
+                    <h3>Aucun historique</h3>
+                    <p>Les commandes sauvegardees apparaitront ici.</p>
+                  </div>
+                )}
               </section>
+            </motion.section>
+          )}
 
-              <section className="panel order-panel">
-                <div className="panel-head">
-                  <h3>Commande</h3>
-                  <div className="actions-row">
-                    <button className="secondary-button" type="button" onClick={saveToHistory}>Enregistrer</button>
-                    <button className="primary-button" type="button" onClick={saveAndExport} disabled={isExportingPdf}>
-                      {isExportingPdf ? "Generation..." : "Generer PDF"}
-                    </button>
+          {activePage === "settings" && (
+            <motion.section
+              key="settings"
+              className="page-stack"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.24 }}
+            >
+              <section className="section-card">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-kicker">Parametres</p>
+                    <h2>Informations du laboratoire</h2>
                   </div>
                 </div>
 
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Designation</th>
-                        <th>Categorie</th>
-                        <th>Quantite</th>
-                        <th>Prix unitaire</th>
-                        <th>Montant</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {orderItems.length ? (
-                        <AnimatePresence initial={false}>
-                          {orderItems.map((item) => (
-                            <motion.tr key={item.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }}>
-                              <td>{item.name}</td>
-                              <td>{item.category}</td>
-                              <td>
-                                <div className="qty-chip">
-                                  <button type="button" onClick={() => updateQuantity(item.id, -1)}>-</button>
-                                  <span>{item.quantity}</span>
-                                  <button type="button" onClick={() => updateQuantity(item.id, 1)}>+</button>
-                                </div>
-                              </td>
-                              <td>{formatCurrency(item.unitPrice)}</td>
-                              <td>{formatCurrency(item.amount)}</td>
-                              <td>
-                                <button className="ghost-button" type="button" onClick={() => removeItem(item.id)}>Supprimer</button>
-                              </td>
-                            </motion.tr>
-                          ))}
-                        </AnimatePresence>
-                      ) : (
-                        <tr>
-                          <td colSpan="6" className="empty-cell">Aucune ligne pour le moment.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="total-card">
-                  <span>Total general</span>
-                  <strong>{formatCurrency(total)}</strong>
+                <div className="settings-grid">
+                  <label>
+                    Nom du laboratoire
+                    <input
+                      value={labInfo.name}
+                      onChange={(event) =>
+                        updateLabInfo("name", event.target.value)
+                      }
+                      placeholder="Laboratoire central"
+                    />
+                  </label>
+                  <label>
+                    Telephone
+                    <input
+                      value={labInfo.phone}
+                      onChange={(event) =>
+                        updateLabInfo("phone", event.target.value)
+                      }
+                      placeholder="+226 ..."
+                    />
+                  </label>
+                  <label className="full-span">
+                    Adresse / garde d'expedition
+                    <textarea
+                      value={labInfo.address}
+                      onChange={(event) =>
+                        updateLabInfo("address", event.target.value)
+                      }
+                      rows="4"
+                      placeholder="Adresse complete"
+                    />
+                  </label>
+                  <label>
+                    Lieu d'expedition
+                    <input
+                      value={labInfo.shippingPlace}
+                      onChange={(event) =>
+                        updateLabInfo("shippingPlace", event.target.value)
+                      }
+                      placeholder="Gare ou lieu"
+                    />
+                  </label>
+                  <label>
+                    Ville d'expedition
+                    <input
+                      value={labInfo.shippingCity}
+                      onChange={(event) =>
+                        updateLabInfo("shippingCity", event.target.value)
+                      }
+                      placeholder="Ville"
+                    />
+                  </label>
+                  <label className="full-span">
+                    Email fournisseur
+                    <input
+                      type="email"
+                      value={labInfo.supplierEmail}
+                      onChange={(event) =>
+                        updateLabInfo("supplierEmail", event.target.value)
+                      }
+                      placeholder="fournisseur@exemple.com"
+                    />
+                  </label>
                 </div>
               </section>
-            </motion.div>
-          )}
-
-          {activeSection === "laboratoire" && (
-            <motion.section key="laboratoire" className="panel" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.28 }}>
-              <div className="panel-head"><h3>Informations du laboratoire et expedition</h3></div>
-              <div className="form-grid">
-                <label>
-                  Nom du laboratoire
-                  <input value={labInfo.name} onChange={(event) => updateLabField("name", event.target.value)} placeholder="Laboratoire Central" />
-                </label>
-                <label>
-                  Telephone du laboratoire
-                  <input value={labInfo.phone} onChange={(event) => updateLabField("phone", event.target.value)} placeholder="+226 ..." />
-                </label>
-                <label className="full">
-                  Adresse
-                  <textarea value={labInfo.address} onChange={(event) => updateLabField("address", event.target.value)} rows="3" placeholder="Adresse complete" />
-                </label>
-                <label className="full">
-                  Email du fournisseur
-                  <input type="email" value={labInfo.supplierEmail} onChange={(event) => updateLabField("supplierEmail", event.target.value)} placeholder="fournisseur@exemple.com" />
-                </label>
-                <label>
-                  Lieu d&apos;expedition / gare
-                  <input value={labInfo.shippingPlace} onChange={(event) => updateLabField("shippingPlace", event.target.value)} placeholder="Nom du lieu ou gare" />
-                </label>
-                <label>
-                  Ville d&apos;expedition
-                  <input value={labInfo.shippingCity} onChange={(event) => updateLabField("shippingCity", event.target.value)} placeholder="Ouagadougou" />
-                </label>
-                <label>
-                  Personne qui recupere
-                  <input value={labInfo.receiverName} onChange={(event) => updateLabField("receiverName", event.target.value)} placeholder="Nom du receveur" />
-                </label>
-                <label>
-                  Contact du receveur
-                  <input value={labInfo.receiverPhone} onChange={(event) => updateLabField("receiverPhone", event.target.value)} placeholder="+226 ..." />
-                </label>
-                <label className="full">
-                  Compagnie de transport / gare
-                  <input value={labInfo.transportCompany} onChange={(event) => updateLabField("transportCompany", event.target.value)} placeholder="Compagnie ou gare d'expedition" />
-                </label>
-              </div>
-
-              <div className="theme-section">
-                <div className="panel-head"><h3>Themes</h3></div>
-                <div className="theme-grid">
-                  {themeOptions.map((option) => (
-                    <button key={option.id} type="button" className={theme === option.id ? "theme-card active" : "theme-card"} onClick={() => setTheme(option.id)}>
-                      <span className="theme-swatch" style={{ "--swatch": option.accent }} />
-                      <strong>{option.name}</strong>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.section>
-          )}
-
-          {activeSection === "catalogue" && (
-            <motion.section key="catalogue" className="content-grid" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.28 }}>
-              <article className="panel">
-                <div className="panel-head"><h3>Mettre a jour le catalogue</h3></div>
-                <div className="form-grid">
-                  <label>
-                    Categorie cible
-                    <select value={catalogEditor.category} onChange={(event) => setCatalogEditor({ ...catalogEditor, category: event.target.value })}>
-                      {catalog.map((entry) => (
-                        <option key={entry.category} value={entry.category}>{entry.category}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Nouvel article
-                    <input value={catalogEditor.itemName} onChange={(event) => setCatalogEditor({ ...catalogEditor, itemName: event.target.value })} placeholder="Ajouter un consommable" />
-                  </label>
-                  <label>
-                    Nouvelle categorie
-                    <input value={catalogEditor.newCategory} onChange={(event) => setCatalogEditor({ ...catalogEditor, newCategory: event.target.value })} placeholder="Creer une categorie" />
-                  </label>
-                  <label>
-                    Import JSON
-                    <input type="file" accept="application/json" onChange={importCatalog} />
-                  </label>
-                </div>
-                <div className="button-row">
-                  <button className="primary-button" type="button" onClick={addCatalogItem}>Ajouter l&apos;article</button>
-                  <button className="secondary-button" type="button" onClick={addCatalogCategory}>Ajouter la categorie</button>
-                  <button className="secondary-button" type="button" onClick={exportCatalog}>Exporter JSON</button>
-                  <button className="ghost-button" type="button" onClick={resetCatalog}>Reinitialiser</button>
-                </div>
-              </article>
-
-              <article className="panel">
-                <div className="panel-head"><h3>Catalogue actuel</h3></div>
-                <div className="catalog-grid">
-                  {catalog.map((entry) => (
-                    <div key={entry.category} className="catalog-card">
-                      <div className="catalog-header">
-                        <strong>{entry.category}</strong>
-                        <span>{entry.items.length} article(s)</span>
-                      </div>
-                      <div className="catalog-items">
-                        {entry.items.length ? (
-                          entry.items.map((item) => (
-                            <div key={item} className="catalog-item">
-                              <span>{item}</span>
-                              <button type="button" className="ghost-button small-button" onClick={() => removeCatalogItem(entry.category, item)}>X</button>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="empty-history">Categorie vide.</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            </motion.section>
-          )}
-
-          {activeSection === "historique" && (
-            <motion.section key="historique" className="panel" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.28 }}>
-              <div className="panel-head"><h3>Historique des commandes</h3></div>
-              <div className="history-list">
-                {history.length ? (
-                  history.map((entry) => (
-                    <div key={entry.id} className="history-card">
-                      <div>
-                        <strong>{new Date(entry.createdAt).toLocaleString("fr-FR")}</strong>
-                        <p>{entry.items.length} ligne(s) - {formatCurrency(entry.total)}</p>
-                      </div>
-                      <div className="actions-row">
-                        <button className="secondary-button" type="button" onClick={() => reuseOrder(entry)}>Reutiliser</button>
-                        <button className="ghost-button" type="button" onClick={() => deleteHistoryEntry(entry.id)}>Supprimer</button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="empty-history">Aucune commande sauvegardee.</p>
-                )}
-              </div>
             </motion.section>
           )}
         </AnimatePresence>
       </main>
+
+      <PriceEditorModal
+        editingPriceItem={editingPriceItem}
+        editingPriceValue={editingPriceValue}
+        onChange={setEditingPriceValue}
+        onClose={closePriceEditor}
+        onSave={savePriceEditor}
+      />
+
+      <nav className="bottom-nav" aria-label="Navigation mobile">
+        {pages.map((page) => (
+          <button
+            key={page.id}
+            type="button"
+            className={
+              activePage === page.id ? "bottom-nav-item active" : "bottom-nav-item"
+            }
+            onClick={() => setActivePage(page.id)}
+          >
+            <span>{page.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
