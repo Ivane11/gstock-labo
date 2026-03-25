@@ -7,6 +7,7 @@ const introDelayMs = 1800;
 const storageKeys = {
   lab: "gstock-lab-info",
   history: "gstock-order-history",
+  installHintDismissed: "gstock-install-hint-dismissed",
 };
 
 const pages = [
@@ -483,12 +484,24 @@ export default function App() {
   useEffect(() => {
     const storedLabInfo = window.localStorage.getItem(storageKeys.lab);
     const storedHistory = window.localStorage.getItem(storageKeys.history);
+    const installHintDismissed =
+      window.localStorage.getItem(storageKeys.installHintDismissed) === "true";
+    const isMobileViewport = window.matchMedia?.("(max-width: 1023px)").matches;
+    const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
 
     if (storedLabInfo) {
       setLabInfo({ ...defaultLabInfo, ...JSON.parse(storedLabInfo) });
     }
     if (storedHistory) {
       setHistory(JSON.parse(storedHistory));
+    }
+    if (!installHintDismissed && isMobileViewport && !isStandalone) {
+      setShowInstallHint(true);
+    } else if (!installHintDismissed && isIos && !isStandalone) {
+      setShowInstallHint(true);
     }
   }, []);
 
@@ -501,19 +514,23 @@ export default function App() {
   }, [history]);
 
   useEffect(() => {
+    const installHintDismissed =
+      window.localStorage.getItem(storageKeys.installHintDismissed) === "true";
     const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
     const isStandalone =
       window.matchMedia?.("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
 
-    if (isIos && !isStandalone) {
+    if (!installHintDismissed && isIos && !isStandalone) {
       setShowInstallHint(true);
     }
 
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
       setInstallPromptEvent(event);
-      setShowInstallHint(true);
+      if (!installHintDismissed) {
+        setShowInstallHint(true);
+      }
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -587,6 +604,11 @@ export default function App() {
     await installPromptEvent.prompt();
     await installPromptEvent.userChoice.catch(() => null);
     setInstallPromptEvent(null);
+    setShowInstallHint(false);
+  };
+
+  const dismissInstallHint = () => {
+    window.localStorage.setItem(storageKeys.installHintDismissed, "true");
     setShowInstallHint(false);
   };
 
@@ -866,7 +888,7 @@ export default function App() {
                   canInstall={canInstall}
                   isIos={isIosDevice}
                   onInstall={launchInstallPrompt}
-                  onDismiss={() => setShowInstallHint(false)}
+                  onDismiss={dismissInstallHint}
                 />
               ) : null}
 
