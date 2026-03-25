@@ -692,17 +692,47 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="hero-panel">
-                    <article className="hero-highlight">
-                      <span>Commande active</span>
-                      <strong>{orderLineCount} ligne(s)</strong>
-                      <small>{formatCurrency(total)}</small>
-                    </article>
-                    <article className="hero-highlight hero-highlight--soft">
-                      <span>Derniere sauvegarde</span>
-                      <strong>{latestHistoryLabel}</strong>
-                      <small>{history.length} commande(s) en historique</small>
-                    </article>
+                  <div className="hero-side">
+                    <motion.div
+                      className="hero-visual-shell"
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.08 }}
+                    >
+                      <span className="hero-orbit hero-orbit--one" />
+                      <span className="hero-orbit hero-orbit--two" />
+                      <span className="hero-orbit hero-orbit--three" />
+                      <span className="hero-glow hero-glow--one" />
+                      <span className="hero-glow hero-glow--two" />
+                      <motion.div
+                        className="hero-image-wrap"
+                        animate={{ y: [0, -8, 0], rotate: [0, 1.2, 0] }}
+                        transition={{
+                          duration: 6.4,
+                          repeat: Number.POSITIVE_INFINITY,
+                          ease: "easeInOut",
+                        }}
+                      >
+                        <img
+                          className="hero-image"
+                          src="/Medicine-bro.svg"
+                          alt="Illustration medicale du laboratoire"
+                        />
+                      </motion.div>
+                    </motion.div>
+
+                    <div className="hero-panel">
+                      <article className="hero-highlight">
+                        <span>Commande active</span>
+                        <strong>{orderLineCount} ligne(s)</strong>
+                        <small>{formatCurrency(total)}</small>
+                      </article>
+                      <article className="hero-highlight hero-highlight--soft">
+                        <span>Derniere sauvegarde</span>
+                        <strong>{latestHistoryLabel}</strong>
+                        <small>{history.length} commande(s) en historique</small>
+                      </article>
+                    </div>
                   </div>
                 </div>
               </section>
