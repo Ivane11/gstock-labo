@@ -426,6 +426,40 @@ function PriceEditorModal({
   );
 }
 
+function InstallHint({ canInstall, isIos, onInstall, onDismiss }) {
+  if (!canInstall && !isIos) {
+    return null;
+  }
+
+  return (
+    <motion.section
+      className="install-hint"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22 }}
+    >
+      <div>
+        <p className="install-hint__title">Installation rapide</p>
+        <p className="install-hint__text">
+          {canInstall
+            ? "Ajoute l'application a l'ecran d'accueil pour l'ouvrir comme une app."
+            : "Sur iPhone, utilise Partager puis Sur l'ecran d'accueil."}
+        </p>
+      </div>
+      <div className="install-hint__actions">
+        {canInstall ? (
+          <AnimatedButton type="button" className="install-hint__button" onClick={onInstall}>
+            Installer
+          </AnimatedButton>
+        ) : null}
+        <AnimatedButton type="button" className="install-hint__dismiss" onClick={onDismiss}>
+          Plus tard
+        </AnimatedButton>
+      </div>
+    </motion.section>
+  );
+}
+
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [activePage, setActivePage] = useState("home");
@@ -438,6 +472,8 @@ export default function App() {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [editingPriceItem, setEditingPriceItem] = useState(null);
   const [editingPriceValue, setEditingPriceValue] = useState("");
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [showInstallHint, setShowInstallHint] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowIntro(false), introDelayMs);
@@ -463,6 +499,26 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem(storageKeys.history, JSON.stringify(history));
   }, [history]);
+
+  useEffect(() => {
+    const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+
+    if (isIos && !isStandalone) {
+      setShowInstallHint(true);
+    }
+
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event);
+      setShowInstallHint(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+  }, []);
 
   const total = useMemo(
     () => orderItems.reduce((sum, item) => sum + item.amount, 0),
@@ -519,6 +575,20 @@ export default function App() {
   const latestHistoryLabel = history[0]
     ? new Date(history[0].createdAt).toLocaleString("fr-FR")
     : "Aucune commande sauvegardee";
+  const isIosDevice =
+    typeof window !== "undefined" && /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  const canInstall = Boolean(installPromptEvent);
+
+  const launchInstallPrompt = async () => {
+    if (!installPromptEvent) {
+      return;
+    }
+
+    await installPromptEvent.prompt();
+    await installPromptEvent.userChoice.catch(() => null);
+    setInstallPromptEvent(null);
+    setShowInstallHint(false);
+  };
 
   const updateLabInfo = (field, value) => {
     setLabInfo((current) => ({ ...current, [field]: value }));
@@ -790,6 +860,15 @@ export default function App() {
                   </div>
                 </div>
               </section>
+
+              {showInstallHint ? (
+                <InstallHint
+                  canInstall={canInstall}
+                  isIos={isIosDevice}
+                  onInstall={launchInstallPrompt}
+                  onDismiss={() => setShowInstallHint(false)}
+                />
+              ) : null}
 
               <section className="stats-grid">
                 {quickStats.map((item) => (
