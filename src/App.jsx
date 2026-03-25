@@ -452,6 +452,21 @@ export default function App() {
     },
   ];
 
+  const settingsFields = [
+    labInfo.name,
+    labInfo.phone,
+    labInfo.address,
+    labInfo.shippingPlace,
+    labInfo.shippingCity,
+    labInfo.supplierEmail,
+  ];
+  const settingsCompletion = Math.round(
+    (settingsFields.filter(Boolean).length / settingsFields.length) * 100
+  );
+  const latestHistoryLabel = history[0]
+    ? new Date(history[0].createdAt).toLocaleString("fr-FR")
+    : "Aucune commande sauvegardee";
+
   const updateLabInfo = (field, value) => {
     setLabInfo((current) => ({ ...current, [field]: value }));
   };
@@ -650,30 +665,45 @@ export default function App() {
               transition={{ duration: 0.24 }}
             >
               <section className="hero-card">
-                <div>
-                  <p className="hero-kicker">Accueil</p>
-                  <h1>Un tableau de bord simple, lisible et efficace.</h1>
-                  <p className="hero-text">
-                    Suis l'etat du stock, prepare une nouvelle commande rapidement et
-                    retrouve les informations du laboratoire sans te perdre dans
-                    l'interface.
-                  </p>
-                </div>
-                <div className="hero-actions">
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={() => setActivePage("order")}
-                  >
-                    Nouvelle commande
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => setActivePage("settings")}
-                  >
-                    Parametres
-                  </button>
+                <div className="hero-layout">
+                  <div className="hero-copy">
+                    <p className="hero-kicker">Accueil</p>
+                    <h1>Un tableau de bord simple, lisible et efficace.</h1>
+                    <p className="hero-text">
+                      Suis l'etat du stock, prepare une nouvelle commande rapidement et
+                      retrouve les informations du laboratoire sans te perdre dans
+                      l'interface.
+                    </p>
+                    <div className="hero-actions">
+                      <button
+                        type="button"
+                        className="primary-button hero-primary"
+                        onClick={() => setActivePage("order")}
+                      >
+                        Nouvelle commande
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button hero-secondary"
+                        onClick={() => setActivePage("settings")}
+                      >
+                        Parametres
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="hero-panel">
+                    <article className="hero-highlight">
+                      <span>Commande active</span>
+                      <strong>{orderLineCount} ligne(s)</strong>
+                      <small>{formatCurrency(total)}</small>
+                    </article>
+                    <article className="hero-highlight hero-highlight--soft">
+                      <span>Derniere sauvegarde</span>
+                      <strong>{latestHistoryLabel}</strong>
+                      <small>{history.length} commande(s) en historique</small>
+                    </article>
+                  </div>
                 </div>
               </section>
 
@@ -703,6 +733,48 @@ export default function App() {
                     </button>
                   </article>
                 ))}
+              </section>
+
+              <section className="section-card quick-links-card">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-kicker">Acces rapide</p>
+                    <h2>Aller directement a l'essentiel</h2>
+                    <p className="section-description">
+                      Raccourcis utiles pour smartphone et desktop.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="quick-links-grid">
+                  <button
+                    type="button"
+                    className="quick-link-tile"
+                    onClick={() => setActivePage("order")}
+                  >
+                    <span>Commande</span>
+                    <strong>Ajouter et chiffrer des articles</strong>
+                    <small>Catalogue par categories et total instantane</small>
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-link-tile"
+                    onClick={() => setActivePage("history")}
+                  >
+                    <span>Historique</span>
+                    <strong>Reprendre une commande</strong>
+                    <small>{history.length} sauvegarde(s) disponible(s)</small>
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-link-tile"
+                    onClick={() => setActivePage("settings")}
+                  >
+                    <span>Laboratoire</span>
+                    <strong>Verifier les coordonnees PDF</strong>
+                    <small>{settingsCompletion}% des informations completees</small>
+                  </button>
+                </div>
               </section>
             </motion.section>
           )}
@@ -811,14 +883,28 @@ export default function App() {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.24 }}
             >
-              <section className="section-card">
-                <div className="section-heading">
+              <section className="section-card history-hero">
+                <div>
+                  <p className="section-kicker">Historique</p>
+                  <h2>Recharger une commande precedente</h2>
+                  <p className="section-description">
+                    Retrouve rapidement les anciennes commandes et recharge-les en un
+                    clic.
+                  </p>
+                </div>
+                <div className="history-overview">
                   <div>
-                    <p className="section-kicker">Historique</p>
-                    <h2>Recharger une commande precedente</h2>
+                    <span>Total en historique</span>
+                    <strong>{history.length}</strong>
+                  </div>
+                  <div>
+                    <span>Derniere entree</span>
+                    <strong>{latestHistoryLabel}</strong>
                   </div>
                 </div>
+              </section>
 
+              <section className="section-card">
                 {history.length ? (
                   <div className="history-list">
                     {history.map((entry) => (
@@ -870,78 +956,120 @@ export default function App() {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.24 }}
             >
-              <section className="section-card">
-                <div className="section-heading">
-                  <div>
-                    <p className="section-kicker">Parametres</p>
-                    <h2>Informations du laboratoire</h2>
+              <section className="settings-layout">
+                <article className="section-card settings-intro-card">
+                  <div className="section-heading">
+                    <div>
+                      <p className="section-kicker">Parametres</p>
+                      <h2>Informations du laboratoire</h2>
+                      <p className="section-description">
+                        Ces informations sont reutilisees dans le PDF et pour
+                        l'expedition.
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="settings-grid">
-                  <label>
-                    Nom du laboratoire
-                    <input
-                      value={labInfo.name}
-                      onChange={(event) =>
-                        updateLabInfo("name", event.target.value)
-                      }
-                      placeholder="Laboratoire central"
-                    />
-                  </label>
-                  <label>
-                    Telephone
-                    <input
-                      value={labInfo.phone}
-                      onChange={(event) =>
-                        updateLabInfo("phone", event.target.value)
-                      }
-                      placeholder="+226 ..."
-                    />
-                  </label>
-                  <label className="full-span">
-                    Adresse / garde d'expedition
-                    <textarea
-                      value={labInfo.address}
-                      onChange={(event) =>
-                        updateLabInfo("address", event.target.value)
-                      }
-                      rows="4"
-                      placeholder="Adresse complete"
-                    />
-                  </label>
-                  <label>
-                    Lieu d'expedition
-                    <input
-                      value={labInfo.shippingPlace}
-                      onChange={(event) =>
-                        updateLabInfo("shippingPlace", event.target.value)
-                      }
-                      placeholder="Gare ou lieu"
-                    />
-                  </label>
-                  <label>
-                    Ville d'expedition
-                    <input
-                      value={labInfo.shippingCity}
-                      onChange={(event) =>
-                        updateLabInfo("shippingCity", event.target.value)
-                      }
-                      placeholder="Ville"
-                    />
-                  </label>
-                  <label className="full-span">
-                    Email fournisseur
-                    <input
-                      type="email"
-                      value={labInfo.supplierEmail}
-                      onChange={(event) =>
-                        updateLabInfo("supplierEmail", event.target.value)
-                      }
-                      placeholder="fournisseur@exemple.com"
-                    />
-                  </label>
-                </div>
+                  <div className="settings-progress">
+                    <span>Completion du profil</span>
+                    <strong>{settingsCompletion}%</strong>
+                    <div className="settings-progress__track" aria-hidden="true">
+                      <div
+                        className="settings-progress__bar"
+                        style={{ width: `${settingsCompletion}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="settings-preview-list">
+                    <div>
+                      <span>Laboratoire</span>
+                      <strong>{labInfo.name || "Non renseigne"}</strong>
+                    </div>
+                    <div>
+                      <span>Telephone</span>
+                      <strong>{labInfo.phone || "Non renseigne"}</strong>
+                    </div>
+                    <div>
+                      <span>Expedition</span>
+                      <strong>
+                        {labInfo.shippingPlace || labInfo.shippingCity
+                          ? `${labInfo.shippingPlace || ""} ${labInfo.shippingCity || ""}`.trim()
+                          : "Non renseigne"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Fournisseur</span>
+                      <strong>{labInfo.supplierEmail || "Non renseigne"}</strong>
+                    </div>
+                  </div>
+                </article>
+
+                <section className="section-card settings-form-card">
+                  <div className="settings-grid">
+                    <label>
+                      Nom du laboratoire
+                      <input
+                        value={labInfo.name}
+                        onChange={(event) =>
+                          updateLabInfo("name", event.target.value)
+                        }
+                        placeholder="Laboratoire central"
+                      />
+                    </label>
+                    <label>
+                      Telephone
+                      <input
+                        value={labInfo.phone}
+                        onChange={(event) =>
+                          updateLabInfo("phone", event.target.value)
+                        }
+                        placeholder="+226 ..."
+                      />
+                    </label>
+                    <label className="full-span">
+                      Adresse / garde d'expedition
+                      <textarea
+                        value={labInfo.address}
+                        onChange={(event) =>
+                          updateLabInfo("address", event.target.value)
+                        }
+                        rows="4"
+                        placeholder="Adresse complete"
+                      />
+                    </label>
+                    <label>
+                      Lieu d'expedition
+                      <input
+                        value={labInfo.shippingPlace}
+                        onChange={(event) =>
+                          updateLabInfo("shippingPlace", event.target.value)
+                        }
+                        placeholder="Gare ou lieu"
+                      />
+                    </label>
+                    <label>
+                      Ville d'expedition
+                      <input
+                        value={labInfo.shippingCity}
+                        onChange={(event) =>
+                          updateLabInfo("shippingCity", event.target.value)
+                        }
+                        placeholder="Ville"
+                      />
+                    </label>
+                    <label className="full-span">
+                      Email fournisseur
+                      <input
+                        type="email"
+                        value={labInfo.supplierEmail}
+                        onChange={(event) =>
+                          updateLabInfo("supplierEmail", event.target.value)
+                        }
+                        placeholder="fournisseur@exemple.com"
+                      />
+                    </label>
+                  </div>
+                </section>
               </section>
             </motion.section>
           )}

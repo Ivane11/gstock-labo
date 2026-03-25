@@ -122,6 +122,45 @@ button {
   color: white;
 }
 
+.hero-layout,
+.settings-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.hero-copy {
+  display: grid;
+  gap: 16px;
+}
+
+.hero-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.hero-highlight {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.hero-highlight--soft {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hero-highlight span,
+.hero-highlight small {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hero-highlight strong {
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+
 .hero-kicker,
 .section-kicker,
 .brand-kicker {
@@ -194,6 +233,43 @@ button {
 .info-card {
   display: grid;
   gap: 12px;
+}
+
+.quick-links-card {
+  display: grid;
+  gap: 16px;
+}
+
+.quick-links-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.quick-link-tile {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 20px;
+  text-align: left;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%);
+  border: 1px solid var(--line);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.quick-link-tile span {
+  color: var(--primary);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.quick-link-tile strong {
+  font-size: 1.08rem;
+}
+
+.quick-link-tile small {
+  color: var(--text-muted);
 }
 
 .info-card h3 {
@@ -528,6 +604,78 @@ textarea {
   gap: 14px;
   border-radius: 20px;
   padding: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbfe 100%);
+}
+
+.history-hero {
+  display: grid;
+  gap: 16px;
+}
+
+.history-overview {
+  display: grid;
+  gap: 12px;
+}
+
+.history-overview > div {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface-muted);
+}
+
+.history-overview span,
+.settings-preview-list span,
+.settings-progress span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.history-overview strong,
+.settings-preview-list strong,
+.settings-progress strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.08rem;
+}
+
+.settings-intro-card,
+.settings-form-card {
+  min-width: 0;
+}
+
+.settings-progress {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface-muted);
+}
+
+.settings-progress__track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #d9e4f1;
+  overflow: hidden;
+}
+
+.settings-progress__bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0a67c8 0%, #0056b3 100%);
+}
+
+.settings-preview-list {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-preview-list > div {
+  padding: 16px;
+  border-radius: 18px;
+  background: white;
+  border: 1px solid var(--line);
 }
 
 .price-modal {
@@ -650,6 +798,11 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .quick-links-grid,
+  .history-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .settings-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -661,6 +814,11 @@ textarea {
 
   .order-layout {
     grid-template-columns: 1fr;
+  }
+
+  .hero-layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+    align-items: stretch;
   }
 }
 
@@ -685,6 +843,15 @@ textarea {
   .order-layout {
     grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.08fr);
     align-items: start;
+  }
+
+  .settings-layout {
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+  }
+
+  .quick-links-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .category-chip-grid {
@@ -740,6 +907,24 @@ textarea {
   .order-summary-strip,
   .order-summary-card__stats {
     grid-template-columns: 1fr;
+  }
+
+  .quick-links-grid,
+  .history-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions,
+  .section-heading,
+  .order-actions,
+  .history-actions,
+  .price-modal__actions {
+    flex-direction: column;
+  }
+
+  .hero-primary,
+  .hero-secondary {
+    width: 100%;
   }
 
   .category-chip-grid {
