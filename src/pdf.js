@@ -1,7 +1,8 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-
-export function buildOrderPdf({ labInfo, items, total }) {
+export async function buildOrderPdf({ labInfo, items, total }) {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
   const doc = new jsPDF();
   const title = `Commande Laboratoire - ${labInfo.name || "Nom du laboratoire"}`;
 

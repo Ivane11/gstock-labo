@@ -61,6 +61,7 @@ export default function App() {
     itemName: "",
   });
   const [installStatus, setInstallStatus] = useState("Navigation prete pour mobile.");
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowIntro(false), introDelayMs);
@@ -209,23 +210,29 @@ export default function App() {
 
   const deleteHistoryEntry = (id) => setHistory((current) => current.filter((entry) => entry.id !== id));
 
-  const generatePdf = () => {
-    if (!orderItems.length) return;
-    const doc = buildOrderPdf({ labInfo, items: orderItems, total });
-    doc.save(`commande-${(labInfo.name || "laboratoire").replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  const generatePdf = async () => {
+    if (!orderItems.length || isExportingPdf) return;
+    setIsExportingPdf(true);
 
-    if (labInfo.supplierEmail) {
-      const subject = encodeURIComponent(`Commande Laboratoire - ${labInfo.name || "Laboratoire"}`);
-      const body = encodeURIComponent(
-        `Bonjour,\n\nVeuillez trouver la commande preparee.\nTotal general: ${formatCurrency(total)}.\n\nCordialement.`
-      );
-      window.open(`mailto:${labInfo.supplierEmail}?subject=${subject}&body=${body}`, "_blank");
+    try {
+      const doc = await buildOrderPdf({ labInfo, items: orderItems, total });
+      doc.save(`commande-${(labInfo.name || "laboratoire").replace(/\s+/g, "-").toLowerCase()}.pdf`);
+
+      if (labInfo.supplierEmail) {
+        const subject = encodeURIComponent(`Commande Laboratoire - ${labInfo.name || "Laboratoire"}`);
+        const body = encodeURIComponent(
+          `Bonjour,\n\nVeuillez trouver la commande preparee.\nTotal general: ${formatCurrency(total)}.\n\nCordialement.`
+        );
+        window.open(`mailto:${labInfo.supplierEmail}?subject=${subject}&body=${body}`, "_blank");
+      }
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
-  const saveAndExport = () => {
+  const saveAndExport = async () => {
     saveToHistory();
-    generatePdf();
+    await generatePdf();
   };
 
   const addCatalogCategory = () => {
@@ -461,7 +468,9 @@ export default function App() {
                   <h3>Commande</h3>
                   <div className="actions-row">
                     <button className="secondary-button" type="button" onClick={saveToHistory}>Enregistrer</button>
-                    <button className="primary-button" type="button" onClick={saveAndExport}>Generer PDF</button>
+                    <button className="primary-button" type="button" onClick={saveAndExport} disabled={isExportingPdf}>
+                      {isExportingPdf ? "Generation..." : "Generer PDF"}
+                    </button>
                   </div>
                 </div>
 
