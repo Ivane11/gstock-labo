@@ -1,0 +1,17 @@
+{
+  "name": "Grimoire Stock",
+  "short_name": "Grimoire",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef5ff",
+  "theme_color": "#0d5ea6",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

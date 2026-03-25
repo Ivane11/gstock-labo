@@ -1,0 +1,68 @@
+[
+  {
+    "category": "Tubes par couleur",
+    "items": [
+      "Tube violet",
+      "Tube gris",
+      "Tube vert",
+      "Tube rouge",
+      "Tube jaune",
+      "Tube bleu"
+    ]
+  },
+  {
+    "category": "Aiguilles de prélèvement",
+    "items": ["GPV10", "GPV21", "Autre aiguille"]
+  },
+  {
+    "category": "Paquets de gants",
+    "items": [
+      "Paquet de gants taille S",
+      "Paquet de gants taille M",
+      "Paquet de gants taille L"
+    ]
+  },
+  {
+    "category": "Consommables divers",
+    "items": [
+      "Paquets de lames",
+      "Cotons",
+      "Pipettes",
+      "Cuvettes",
+      "Embouts de pipette",
+      "Divans / supports",
+      "Flacons / béchers"
+    ]
+  },
+  {
+    "category": "Réactifs biologiques",
+    "items": [
+      "Numération formule sanguine (NFS)",
+      "Glycémie (Glucose)",
+      "Fièvre typhoïde",
+      "CRP",
+      "Toxo",
+      "Rubéole",
+      "Hépatite B",
+      "HIV",
+      "Sérologie SWF",
+      "Cassettes électrophorèse myoglobine",
+      "Réactifs urinaires (Glucose, Protéine, Sang)",
+      "PCR"
+    ]
+  },
+  {
+    "category": "Kits spécifiques",
+    "items": [
+      "Kit sérologie SWF",
+      "Kit sérologie CRP",
+      "Kit ELISA",
+      "Kit hématologie",
+      "Kit coagulation"
+    ]
+  },
+  {
+    "category": "Autres",
+    "items": ["Article personnalisé"]
+  }
+]
