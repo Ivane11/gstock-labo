@@ -1,9 +1,12 @@
-const CACHE_NAME = "grimoire-stock-v1";
-const APP_ASSETS = ["/", "/manifest.webmanifest", "/icon.svg"];
+const CACHE_NAME = "grimoire-stock-v2";
+const APP_ASSETS = ["/", "/manifest.webmanifest", "/icon.svg", "/logo.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_ASSETS)).catch(() => Promise.resolve())
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_ASSETS))
+      .catch(() => Promise.resolve())
   );
   self.skipWaiting();
 });
@@ -22,19 +25,34 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const requestUrl = new URL(event.request.url);
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put("/", copy));
+          return response;
+        })
+        .catch(() => caches.match("/") || Response.error())
+    );
+    return;
+  }
+
+  if (requestUrl.origin !== self.location.origin) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
-
       return fetch(event.request)
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match("/"));
+        .catch(() => cached || caches.match("/"));
     })
   );
 });
